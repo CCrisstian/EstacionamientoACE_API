@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using EstacionamientoACE_API.Models;
+using EstacionamientoACE_API.Models.DTO;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using EstacionamientoACE_API.Models;
 
 namespace EstacionamientoACE_API.Controllers
 {
@@ -22,11 +23,22 @@ namespace EstacionamientoACE_API.Controllers
         {
             var estacionamientos = await _context.Estacionamientos
                 .Where(e => e.EstLatitud != null && e.EstLongitud != null)
-                .Select(e => new
+                .Include(e => e.Plazas) // Incluir plazas para poder contarlas
+                .Select(e => new Estacionamiento_DTO
                 {
-                    nombre = e.EstNombre,
-                    latitud = e.EstLatitud,
-                    longitud = e.EstLongitud
+                    EstNombre = e.EstNombre ?? "Sin nombre",
+                    Est_direccion = e.EstDireccion ?? "Sin dirección",
+                    Est_Dias_Atencion = e.EstDiasAtencion ?? "No definido",
+                    Est_Hra_Atencion = e.EstHraAtencion ?? "No definido",
+                    EstLatitud = e.EstLatitud,
+                    EstLongitud = e.EstLongitud,
+                    EstDiasFeriadoAtencion = e.EstDiasFeriadoAtencion,
+                    EstFinDeSemanaAtencion = e.EstFinDeSemanaAtencion,
+                    EstHoraFinDeSemana = e.EstHoraFinDeSemana,
+                    EstDisponibilidad = e.EstDisponibilidad,
+
+                    // Calcular plazas disponibles (Plaza.Disponible debe existir)
+                    CantidadPlazasDisponibles = e.Plazas.Count(p => p.PlazaDisponibilidad)
                 })
                 .ToListAsync();
 
