@@ -1,20 +1,26 @@
-using EstacionamientoACE_API.Models; 
+using EstacionamientoACE_API.Models;
 using Microsoft.EntityFrameworkCore;
-
+using System.Text.Json.Serialization; // <- necesario para ReferenceHandler
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Conexión a la Base de Datos
+// 🧩 Conexión a la Base de Datos
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container.
-// Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // 🔹 Ignorar ciclos de referencia al serializar
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true; // Opcional: JSON más legible
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Configuración de CORS para permitir solicitudes desde cualquier origen
+// 🌐 CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -25,12 +31,10 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 🔧 AÑADIDO CLAVE: Escuchar en 0.0.0.0 para permitir conexión desde el emulador
-builder.WebHost.UseUrls("http://0.0.0.0:5159");
+builder.WebHost.UseUrls("https://localhost:7333", "http://0.0.0.0:5333");
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -39,8 +43,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowAll");
 
+//app.UseHttpsRedirection();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
